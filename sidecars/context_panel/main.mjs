@@ -7,8 +7,9 @@
  */
 
 import { readFileSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
   ID_RE,
   analyzeConversation,
@@ -17,7 +18,11 @@ import {
 } from './analyzer.mjs';
 
 const { SidecarApp, Response } = await import('sidecar_sdk').catch(() =>
-  import('/Users/ahmetsahin/.gemini/antigravity/lib/node_modules/sidecar_sdk/index.mjs')
+  import(
+    pathToFileURL(
+      join(homedir(), '.gemini', 'antigravity', 'lib', 'node_modules', 'sidecar_sdk', 'index.mjs')
+    ).href
+  )
 );
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
