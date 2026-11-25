@@ -1045,6 +1045,8 @@ export async function scanCustomizations(appData, workspaceUris = [], readFileRe
 // Safe File URI Allowlist
 // ---------------------------------------------------------------------------
 
+const IS_WIN = process.platform === 'win32';
+
 function buildAllowedRoots(appData, workspaceUris, extraPaths = []) {
   const home = homedir();
   const candidates = [
@@ -1066,13 +1068,17 @@ function buildAllowedRoots(appData, workspaceUris, extraPaths = []) {
 
 function canonicalAllowedFile(target, roots) {
   if (!target || typeof target !== 'string' || target.length > 4096 || !isAbsolute(target)) return null;
-  if (/[%\0\\]/.test(target)) return null;
-  if (target.split('/').some((seg) => seg === '.' || seg === '..')) return null;
+  if (IS_WIN ? /[%\0]/.test(target) : /[%\0\\]/.test(target)) return null;
+  if (target.split(/[\\/]/).some((seg) => seg === '.' || seg === '..')) return null;
   const real = safeRealpath(target);
   if (!real) return null;
   const st = statOf(real);
   if (!st.isFile) return null;
-  const ok = roots.some((r) => real.startsWith(r) || real === r.slice(0, -1));
+  const realCmp = IS_WIN ? real.toLowerCase() : real;
+  const ok = roots.some((r) => {
+    const rootCmp = IS_WIN ? r.toLowerCase() : r;
+    return realCmp.startsWith(rootCmp) || realCmp === rootCmp.slice(0, -1);
+  });
   return ok ? pathToFileURL(real).href : null;
 }
 
